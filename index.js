@@ -1,5 +1,6 @@
 const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
+require('dotenv').config();
 
 // Змінні середовища
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -10,6 +11,7 @@ const TARGET_HOST = process.env.TARGET_HOST;
 const CHECK_INTERVAL = 60_000; // перевірка кожні 60 секунд
 const REQUEST_TIMEOUT = 5_000; // таймаут запиту — 5 секунд
 const REQUIRED_ATTEMPTS = 3; // скільки разів поспіль має підтвердитися зміна
+const SCHEDULE_CHECK_INTERVAL = 5 * 60_000;
 
 // Перевіряємо наявність налаштувань
 if (!BOT_TOKEN || !CHAT_ID || !TARGET_HOST) {
