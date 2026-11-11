@@ -1,34 +1,6 @@
 {
-  "todayDate": "2026-11-10",
+  "todayDate": "2026-11-11",
   "today": [
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    2,
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    2,
-    0
-  ],
-  "todayStatus": "ScheduleApplies",
-  "tomorrowDate": "2026-11-11",
-  "tomorrow": [
     0,
     3,
     1,
@@ -54,5 +26,8 @@
     1,
     1
   ],
-  "tomorrowStatus": "ScheduleApplies"
+  "todayStatus": "ScheduleApplies",
+  "tomorrowDate": "2026-11-12",
+  "tomorrow": [],
+  "tomorrowStatus": "WaitingForSchedule"
 }
