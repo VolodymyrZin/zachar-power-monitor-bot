@@ -8,10 +8,11 @@ const TelegramBot = require('node-telegram-bot-api');
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
-const SCHEDULE_FILE = path.join(__dirname, 'schedule.json');
-
 const QUEUE = '17.1';
-const SCHEDULE_URL = `https://alerts.energy/kyiv/schedule/kyiv_oblenergo/${QUEUE}/zavtra`;
+const SCHEDULE_FILE = path.join(__dirname, 'schedule.json');
+const YASNO_URL =
+  'https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/25/dsos/902/planned-outages';
+const ALERTS_ENERGY_URL = `https://alerts.energy/kyiv/schedule/kyiv_oblenergo/${QUEUE}/zavtra`;
 
 function loadSchedule() {
   try {
@@ -36,12 +37,12 @@ function saveSchedule(schedule) {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function fetchSchedule() {
+async function fetchAlertsEnergy() {
   const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const { data: html } = await axios.get(SCHEDULE_URL, {
+      const { data: html } = await axios.get(ALERTS_ENERGY_URL, {
         timeout: 15000,
       });
 
@@ -91,7 +92,9 @@ async function fetchSchedule() {
 
       if (status === 429 && attempt < maxAttempts) {
         const retryAfter = Number(error.response.headers['retry-after']);
-
+        if (Number.isFinite(retryAfter) && retryAfter > 60) {
+          throw error;
+        }
         const delay =
           Number.isFinite(retryAfter) && retryAfter > 0
             ? Math.min(retryAfter * 1000, 60000)
@@ -108,6 +111,20 @@ async function fetchSchedule() {
       throw error;
     }
   }
+}
+async function fetchYasno() {
+  const { data } = await axios.get(YASNO_URL, {
+    timeout: 15000,
+  });
+  const { today, tomorrow } = data[QUEUE];
+  return {
+    todayDate: today.date,
+    today: today.slots,
+    todayStatus: today.status,
+    tomorrowDate: tomorrow.date,
+    tomorrow: tomorrow.slots,
+    tomorrowStatus: tomorrow.status,
+  };
 }
 
 function hasScheduleChanged(newSchedule, oldSchedule) {
@@ -158,6 +175,41 @@ function formatOutages(hours) {
 
   return outages.length ? outages.join(', ') : 'Відключень немає';
 }
+function formatYasnoOutages(slots, status) {
+  if (status === 'WaitingForSchedule') return 'Графік ще не опублікований';
+  if (!slots || slots.length === 0) {
+    return 'Графік ще не опублікований';
+  }
+  const plannedOutages = slots.filter(slot => slot.type === 'Definite');
+  if (plannedOutages.length === 0) {
+    return 'Відключень немає';
+  }
+  return plannedOutages
+    .map(slot => {
+      return `${formatTime(slot.start)} - ${formatTime(slot.end)}`;
+    })
+    .join(', ');
+}
+function formatDate(date) {
+  const [year, month, day] = date.slice(0, 10).split('-');
+  return [day, month, year].join('.');
+}
+async function fetchSchedule() {
+  try {
+    const yasno = await fetchYasno();
+    return { ...yasno, source: 'yasno' };
+  } catch (error) {
+    console.warn('YASNO недоступний:', error.message);
+
+    const alertsEnergy = await fetchAlertsEnergy();
+    return { ...alertsEnergy, source: 'alerts-energy' };
+  }
+}
+function formatTime(minutes) {
+  const hour = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
 
 async function updateSchedule(bot) {
   const previousSchedule = loadSchedule();
@@ -179,21 +231,22 @@ async function updateSchedule(bot) {
 
   const isFirstRun = !previousSchedule.todayDate;
 
-  saveSchedule(updatedSchedule);
-
   if (isFirstRun) {
+    saveSchedule(updatedSchedule);
     console.log('Початковий графік збережено без сповіщення');
     return;
   }
-
+  const formatOutagesBySource =
+    newSchedule.source === 'yasno' ? formatYasnoOutages : formatOutages;
   const message =
     `📅 <b>Оновлено графік відключень</b>\n\n` +
-    `Сьогодні (${updatedSchedule.todayDate}):\n` +
-    `${formatOutages(updatedSchedule.today)}\n\n` +
-    `Завтра (${updatedSchedule.tomorrowDate}):\n` +
-    `${formatOutages(updatedSchedule.tomorrow)}`;
+    `Сьогодні (${formatDate(updatedSchedule.todayDate)}):\n` +
+    `${formatOutagesBySource(updatedSchedule.today, updatedSchedule.todayStatus)}\n\n` +
+    `Завтра (${formatDate(updatedSchedule.tomorrowDate)}):\n` +
+    `${formatOutagesBySource(updatedSchedule.tomorrow, updatedSchedule.tomorrowStatus)}`;
 
   await bot.sendMessage(CHAT_ID, message, { parse_mode: 'HTML' });
+  saveSchedule(updatedSchedule);
 
   console.log('Графік оновлено, повідомлення надіслано');
 }
