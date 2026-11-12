@@ -1,6 +1,8 @@
-const axios = require('axios');
-const TelegramBot = require('node-telegram-bot-api');
-require('dotenv').config();
+import axios from 'axios';
+import dotenv from 'dotenv';
+import TelegramBot from 'node-telegram-bot-api';
+
+dotenv.config();
 
 // Змінні середовища
 const BOT_TOKEN = process.env.BOT_TOKEN;

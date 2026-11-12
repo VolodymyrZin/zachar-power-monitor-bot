@@ -1,9 +1,13 @@
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
-require('dotenv').config();
+import fs from 'node:fs';
+import path from 'node:path';
+import axios from 'axios';
+import dotenv from 'dotenv';
+import TelegramBot from 'node-telegram-bot-api';
+import { fileURLToPath } from 'node:url';
 
-const TelegramBot = require('node-telegram-bot-api');
+dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
