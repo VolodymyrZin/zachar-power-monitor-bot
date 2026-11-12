@@ -94,7 +94,7 @@ async function fetchSchedule() {
 
         const delay =
           Number.isFinite(retryAfter) && retryAfter > 0
-            ? retryAfter * 1000
+            ? Math.min(retryAfter * 1000, 60000)
             : attempt * 30000;
 
         console.log(
