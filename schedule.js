@@ -9,14 +9,16 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
 const SCHEDULE_FILE = path.join(__dirname, 'schedule.json');
+
 const QUEUE = '17.1';
 const SCHEDULE_URL = `https://alerts.energy/kyiv/schedule/kyiv_oblenergo/${QUEUE}/zavtra`;
+
 function loadSchedule() {
   try {
-    const data = fs.readFileSync(SCHEDULE_FILE, 'utf8');
-    return JSON.parse(data);
+    return JSON.parse(fs.readFileSync(SCHEDULE_FILE, 'utf8'));
   } catch (error) {
     console.error('Помилка читання графіка:', error.message);
+
     return {
       todayDate: null,
       today: [],
@@ -27,63 +29,85 @@ function loadSchedule() {
     };
   }
 }
+
 function saveSchedule(schedule) {
-  try {
-    fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(schedule, null, 2), 'utf8');
-  } catch (error) {
-    console.error('Помилка збереження графіка:', error.message);
-  }
+  fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(schedule, null, 2), 'utf8');
 }
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 async function fetchSchedule() {
-  const { data: html } = await axios.get(SCHEDULE_URL);
+  const maxAttempts = 3;
 
-  const marker = `"queue":"${QUEUE}"`;
-  const index = html.indexOf(marker);
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const { data: html } = await axios.get(SCHEDULE_URL, {
+        timeout: 15000,
+      });
 
-  if (index === -1) {
-    throw new Error(`Чергу ${QUEUE} не знайдено`);
-  }
+      const marker = `"queue":"${QUEUE}"`;
+      const index = html.indexOf(marker);
 
-  const start = html.lastIndexOf('{', index);
-
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  let end = -1;
-
-  for (let i = start; i < html.length; i++) {
-    const char = html[i];
-
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-      } else if (char === '\\') {
-        escaped = true;
-      } else if (char === '"') {
-        inString = false;
+      if (index === -1) {
+        throw new Error(`Чергу ${QUEUE} не знайдено`);
       }
-      continue;
-    }
 
-    if (char === '"') {
-      inString = true;
-    } else if (char === '{') {
-      depth++;
-    } else if (char === '}') {
-      depth--;
+      const start = html.lastIndexOf('{', index);
 
-      if (depth === 0) {
-        end = i + 1;
-        break;
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
+      let end = -1;
+
+      for (let i = start; i < html.length; i++) {
+        const char = html[i];
+
+        if (inString) {
+          if (escaped) escaped = false;
+          else if (char === '\\') escaped = true;
+          else if (char === '"') inString = false;
+          continue;
+        }
+
+        if (char === '"') inString = true;
+        else if (char === '{') depth++;
+        else if (char === '}') {
+          depth--;
+
+          if (depth === 0) {
+            end = i + 1;
+            break;
+          }
+        }
       }
+
+      if (end === -1) {
+        throw new Error('Не вдалося визначити межі об’єкта графіка');
+      }
+
+      return JSON.parse(html.slice(start, end));
+    } catch (error) {
+      const status = error.response?.status;
+
+      if (status === 429 && attempt < maxAttempts) {
+        const retryAfter = Number(error.response.headers['retry-after']);
+
+        const delay =
+          Number.isFinite(retryAfter) && retryAfter > 0
+            ? retryAfter * 1000
+            : attempt * 30000;
+
+        console.log(
+          `Отримано 429. Повторна спроба через ${delay / 1000} секунд`
+        );
+
+        await sleep(delay);
+        continue;
+      }
+
+      throw error;
     }
   }
-
-  if (end === -1) {
-    throw new Error('Не вдалося визначити межі об’єкта графіка');
-  }
-
-  return JSON.parse(html.slice(start, end));
 }
 
 function hasScheduleChanged(newSchedule, oldSchedule) {
@@ -97,6 +121,7 @@ function hasScheduleChanged(newSchedule, oldSchedule) {
       JSON.stringify(oldSchedule.tomorrow)
   );
 }
+
 function formatOutages(hours) {
   if (!hours || hours.length === 0) {
     return 'Графік ще не опублікований';
@@ -113,9 +138,7 @@ function formatOutages(hours) {
   let start = null;
 
   for (let i = 0; i <= slots.length; i++) {
-    if (slots[i] && start === null) {
-      start = i;
-    }
+    if (slots[i] && start === null) start = i;
 
     if ((!slots[i] || i === slots.length) && start !== null) {
       const end = i;
@@ -135,6 +158,7 @@ function formatOutages(hours) {
 
   return outages.length ? outages.join(', ') : 'Відключень немає';
 }
+
 async function updateSchedule(bot) {
   const previousSchedule = loadSchedule();
   const newSchedule = await fetchSchedule();
@@ -173,19 +197,27 @@ async function updateSchedule(bot) {
 
   console.log('Графік оновлено, повідомлення надіслано');
 }
+
 async function main() {
+  if (!BOT_TOKEN || !CHAT_ID) {
+    throw new Error('Не задано BOT_TOKEN або CHAT_ID!');
+  }
+
+  const bot = new TelegramBot(BOT_TOKEN, { polling: false });
+
+  console.log('Перевірка графіка запущена');
+
   try {
-    if (!BOT_TOKEN || !CHAT_ID) {
-      throw new Error('Не задано BOT_TOKEN або CHAT_ID!');
-    }
-
-    const bot = new TelegramBot(BOT_TOKEN, { polling: false });
-
     await updateSchedule(bot);
   } catch (error) {
-    console.error('Помилка перевірки графіка:', error.message);
+    console.error('Статус:', error.response?.status);
+    console.error('Дані:', error.response?.data);
+    console.error('Заголовки:', error.response?.headers);
     process.exitCode = 1;
   }
 }
 
-main();
+main().catch(error => {
+  console.error('Критична помилка:', error.message);
+  process.exitCode = 1;
+});
