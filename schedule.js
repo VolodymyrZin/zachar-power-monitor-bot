@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
-const QUEUE = '17.1';
+const QUEUE = '36.1';
 const SCHEDULE_FILE = path.join(__dirname, 'schedule.json');
 const YASNO_URL =
   'https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/25/dsos/902/planned-outages';
