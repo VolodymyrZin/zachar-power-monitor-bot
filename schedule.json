@@ -3,28 +3,33 @@
   "today": [
     {
       "start": 0,
-      "end": 450,
+      "end": 120,
       "type": "NotPlanned"
     },
     {
-      "start": 450,
-      "end": 720,
+      "start": 120,
+      "end": 330,
       "type": "Definite"
+    },
+    {
+      "start": 330,
+      "end": 720,
+      "type": "NotPlanned"
     },
     {
       "start": 720,
-      "end": 930,
-      "type": "NotPlanned"
+      "end": 1020,
+      "type": "Definite"
     },
     {
-      "start": 930,
+      "start": 1020,
       "end": 1260,
-      "type": "Definite"
+      "type": "NotPlanned"
     },
     {
       "start": 1260,
       "end": 1440,
-      "type": "NotPlanned"
+      "type": "Definite"
     }
   ],
   "todayStatus": "ScheduleApplies",
