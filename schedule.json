@@ -13,11 +13,11 @@
     },
     {
       "start": 540,
-      "end": 840,
+      "end": 810,
       "type": "NotPlanned"
     },
     {
-      "start": 840,
+      "start": 810,
       "end": 1110,
       "type": "Definite"
     },
