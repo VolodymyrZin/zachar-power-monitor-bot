@@ -24,6 +24,32 @@
   ],
   "todayStatus": "ScheduleApplies",
   "tomorrowDate": "2026-11-26T00:00:00+02:00",
-  "tomorrow": [],
-  "tomorrowStatus": "WaitingForSchedule"
+  "tomorrow": [
+    {
+      "start": 0,
+      "end": 360,
+      "type": "NotPlanned"
+    },
+    {
+      "start": 360,
+      "end": 630,
+      "type": "Definite"
+    },
+    {
+      "start": 630,
+      "end": 930,
+      "type": "NotPlanned"
+    },
+    {
+      "start": 930,
+      "end": 1230,
+      "type": "Definite"
+    },
+    {
+      "start": 1230,
+      "end": 1440,
+      "type": "NotPlanned"
+    }
+  ],
+  "tomorrowStatus": "ScheduleApplies"
 }
