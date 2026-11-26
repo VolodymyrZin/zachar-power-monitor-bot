@@ -1,34 +1,24 @@
 {
-  "todayDate": "2026-11-26T00:00:00+02:00",
+  "todayDate": "2026-11-27T00:00:00+02:00",
   "today": [
     {
       "start": 0,
-      "end": 360,
+      "end": 750,
       "type": "NotPlanned"
     },
     {
-      "start": 360,
-      "end": 630,
+      "start": 750,
+      "end": 1050,
       "type": "Definite"
     },
     {
-      "start": 630,
-      "end": 930,
-      "type": "NotPlanned"
-    },
-    {
-      "start": 930,
-      "end": 1230,
-      "type": "Definite"
-    },
-    {
-      "start": 1230,
+      "start": 1050,
       "end": 1440,
       "type": "NotPlanned"
     }
   ],
   "todayStatus": "ScheduleApplies",
-  "tomorrowDate": "2026-11-27T00:00:00+02:00",
+  "tomorrowDate": "2026-11-28T00:00:00+02:00",
   "tomorrow": [],
   "tomorrowStatus": "WaitingForSchedule"
 }
