@@ -3,6 +3,16 @@
   "today": [
     {
       "start": 0,
+      "end": 270,
+      "type": "NotPlanned"
+    },
+    {
+      "start": 270,
+      "end": 450,
+      "type": "Definite"
+    },
+    {
+      "start": 450,
       "end": 750,
       "type": "NotPlanned"
     },
