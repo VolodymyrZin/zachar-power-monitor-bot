@@ -8,18 +8,23 @@
     },
     {
       "start": 630,
-      "end": 900,
+      "end": 960,
       "type": "Definite"
     },
     {
-      "start": 900,
-      "end": 1260,
+      "start": 960,
+      "end": 1140,
       "type": "NotPlanned"
     },
     {
-      "start": 1260,
-      "end": 1440,
+      "start": 1140,
+      "end": 1410,
       "type": "Definite"
+    },
+    {
+      "start": 1410,
+      "end": 1440,
+      "type": "NotPlanned"
     }
   ],
   "todayStatus": "ScheduleApplies",
